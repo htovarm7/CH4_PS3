@@ -22,7 +22,6 @@ def inverse_kinematics(x, y, l1, l2):
     Returns theta1 (shoulder) and theta2 (elbow) in radians."""
     r2 = x**2 + y**2
     cos_theta2 = (r2 - l1**2 - l2**2) / (2 * l1 * l2)
-    cos_theta2 = np.clip(cos_theta2, -1, 1)
     theta2 = np.arccos(cos_theta2)  # elbow-up
     k1 = l1 + l2 * np.cos(theta2)
     k2 = l2 * np.sin(theta2)
@@ -50,15 +49,15 @@ for TNum in trial_range:
     data = np.array(rows)
 
     time   = data[:, 0].astype(int)
-    s2x    = data[:, 4]
-    s2y    = data[:, 5]
-    s2z    = data[:, 6]
-    tx     = data[:, 7]
-    ty     = data[:, 8]
+    s2x    = data[:, 4] / 100.0  # cm → m
+    s2y    = data[:, 5] / 100.0
+    s2z    = data[:, 6] / 100.0
+    tx     = data[:, 7] / 100.0
+    ty     = data[:, 8] / 100.0
     Goflag = data[:, 16].astype(int)
 
     # Find the index where the target disappears (ty goes to ~0)
-    indexY = np.where(np.abs(ty) < 0.001)[0]
+    indexY = np.where(np.abs(ty) < 0.00001)[0]
     if len(indexY) > 0 and indexY[0] > 0 and ty[indexY[0]] != ty[indexY[0] - 1]:
         EndIndex = indexY[0] - 1
     else:
@@ -117,8 +116,8 @@ print("FILTERING ERROR STATISTICS")
 print("=" * 65)
 print(f"{'Metric':<30} {'X':>15} {'Y':>15}")
 print("-" * 65)
-print(f"{'Mean RMSE (cm)':<30} {np.mean(rmse_x_list):>15.4f} {np.mean(rmse_y_list):>15.4f}")
-print(f"{'Std RMSE (cm)':<30} {np.std(rmse_x_list):>15.4f} {np.std(rmse_y_list):>15.4f}")
+print(f"{'Mean RMSE (m)':<30} {np.mean(rmse_x_list):>15.6f} {np.mean(rmse_y_list):>15.6f}")
+print(f"{'Std RMSE (m)':<30} {np.std(rmse_x_list):>15.6f} {np.std(rmse_y_list):>15.6f}")
 print(f"{'Mean SNR (dB)':<30} {np.mean(snr_x_list):>15.1f} {np.mean(snr_y_list):>15.1f}")
 print(f"{'Min SNR (dB)':<30} {np.min(snr_x_list):>15.1f} {np.min(snr_y_list):>15.1f}")
 print("=" * 65)
@@ -151,7 +150,7 @@ TNum_demo = 27
 t_demo = TrajData[TNum_demo]['Time']
 ax1[1, 0].plot(t_demo, TrajData[TNum_demo]['Sen2X_raw'], 'r', alpha=0.5, label='Raw')
 ax1[1, 0].plot(t_demo, TrajData[TNum_demo]['Sen2X'], 'b', label='Filtered')
-ax1[1, 0].set_ylabel('X position (cm)')
+ax1[1, 0].set_ylabel('X position (m)')
 ax1[1, 0].set_title('Raw vs Filtered — Trial 27, X')
 ax1[1, 0].legend(fontsize=8)
 ax1[1, 0].grid(True, alpha=0.3)
@@ -159,7 +158,7 @@ ax1[1, 0].grid(True, alpha=0.3)
 # [1,1] Raw vs filtered Y — Trial 27
 ax1[1, 1].plot(t_demo, TrajData[TNum_demo]['Sen2Y_raw'], 'r', alpha=0.5, label='Raw')
 ax1[1, 1].plot(t_demo, TrajData[TNum_demo]['Sen2Y'], 'b', label='Filtered')
-ax1[1, 1].set_ylabel('Y position (cm)')
+ax1[1, 1].set_ylabel('Y position (m)')
 ax1[1, 1].set_xlabel('Time (ms)')
 ax1[1, 1].set_title('Raw vs Filtered — Trial 27, Y')
 ax1[1, 1].legend(fontsize=8)
@@ -171,7 +170,7 @@ ax1[2, 0].bar(np.array(trial_nums) - 0.2, rmse_x_list, 0.4, color='steelblue', a
 ax1[2, 0].bar(np.array(trial_nums) + 0.2, rmse_y_list, 0.4, color='coral', alpha=0.7, label='Y')
 ax1[2, 0].axhline(np.mean(rmse_x_list), color='steelblue', linestyle='--', alpha=0.5)
 ax1[2, 0].axhline(np.mean(rmse_y_list), color='coral', linestyle='--', alpha=0.5)
-ax1[2, 0].set_ylabel('RMSE (cm)')
+ax1[2, 0].set_ylabel('RMSE (m)')
 ax1[2, 0].set_xlabel('Trial number')
 ax1[2, 0].set_title('RMSE of removed noise per trial')
 ax1[2, 0].legend(fontsize=8)
@@ -182,7 +181,7 @@ all_res_x = np.concatenate(residuals_x)
 all_res_y = np.concatenate(residuals_y)
 ax1[2, 1].hist(all_res_x, bins=60, color='steelblue', alpha=0.6, density=True, label=f'X (σ={np.std(all_res_x):.3f})')
 ax1[2, 1].hist(all_res_y, bins=60, color='coral', alpha=0.6, density=True, label=f'Y (σ={np.std(all_res_y):.3f})')
-ax1[2, 1].set_xlabel('Residual (cm)')
+ax1[2, 1].set_xlabel('Residual (m)')
 ax1[2, 1].set_ylabel('Density')
 ax1[2, 1].set_title('Pooled residual distributions (≈ Gaussian → noise)')
 ax1[2, 1].legend(fontsize=8)
@@ -216,8 +215,8 @@ shift_x = -0.21
 shift_y = 0.10
 
 for TNum in trial_range:
-    ex = TrajData[TNum]['Sen2X'] / 100.0 + shift_x
-    ey = TrajData[TNum]['Sen2Y'] / 100.0 + shift_y
+    ex = TrajData[TNum]['Sen2X'] + shift_x
+    ey = TrajData[TNum]['Sen2Y'] + shift_y
 
     theta1, theta2 = inverse_kinematics(ex, ey, l1, l2)
 
@@ -279,7 +278,7 @@ fig2.suptitle('Figure 2: Kinematics — Trajectories, Joint Angles, Velocities &
 for TNum in trial_range:
     ax2[0, 0].plot(TrajData[TNum]['Sen2X'], TrajData[TNum]['Sen2Y'], 'r', alpha=0.4)
 ax2[0, 0].plot(targetx, targety, 'ko', markersize=6, label='Targets')
-ax2[0, 0].set_xlabel('X (cm)'); ax2[0, 0].set_ylabel('Y (cm)')
+ax2[0, 0].set_xlabel('X (m)'); ax2[0, 0].set_ylabel('Y (m)')
 ax2[0, 0].set_title('All filtered trajectories + targets')
 ax2[0, 0].legend(fontsize=8)
 ax2[0, 0].axis('equal')
@@ -290,7 +289,7 @@ TNum = 27
 t27 = TrajData[TNum]['Time']
 ax2[0, 1].plot(TrajData[TNum]['Sen2X'], TrajData[TNum]['Sen2Y'], 'b')
 ax2[0, 1].plot(TrajData[TNum]['Tx'][0], TrajData[TNum]['Ty'][0], 'ro', markersize=8)
-ax2[0, 1].set_xlabel('X (cm)'); ax2[0, 1].set_ylabel('Y (cm)')
+ax2[0, 1].set_xlabel('X (m)'); ax2[0, 1].set_ylabel('Y (m)')
 ax2[0, 1].set_title('Trial #27 — path + target')
 ax2[0, 1].axis('equal')
 ax2[0, 1].grid(True, alpha=0.3)
@@ -325,7 +324,7 @@ for a in ax2.flat:
     a.grid(True, alpha=0.3)
 fig2.tight_layout()
 
-VEL_THRESHOLD = 2.0  # cm/s — threshold for movement onset/offset
+VEL_THRESHOLD = 0.02  # m/s — threshold for movement onset/offset
 
 trial_stats = {}
 for TNum in trial_range:
@@ -371,14 +370,14 @@ print(f"{'Metric':<30} {'Mean':>10} {'Std':>10} {'Min':>10} {'Max':>10}")
 print("-" * 80)
 print(f"{'Duration (ms)':<30} {np.mean(durations):>10.1f} {np.std(durations):>10.1f} "
       f"{np.min(durations):>10.1f} {np.max(durations):>10.1f}")
-print(f"{'Peak speed (cm/s)':<30} {np.mean(peak_speeds):>10.1f} {np.std(peak_speeds):>10.1f} "
-      f"{np.min(peak_speeds):>10.1f} {np.max(peak_speeds):>10.1f}")
-print(f"{'Endpoint error (cm)':<30} {np.mean(errors):>10.2f} {np.std(errors):>10.2f} "
-      f"{np.min(errors):>10.2f} {np.max(errors):>10.2f}")
-print(f"{'Path length (cm)':<30} {np.mean(path_lengths):>10.2f} {np.std(path_lengths):>10.2f} "
-      f"{np.min(path_lengths):>10.2f} {np.max(path_lengths):>10.2f}")
-print(f"{'Target distance (cm)':<30} {np.mean(target_dists):>10.2f} {np.std(target_dists):>10.2f} "
-      f"{np.min(target_dists):>10.2f} {np.max(target_dists):>10.2f}")
+print(f"{'Peak speed (m/s)':<30} {np.mean(peak_speeds):>10.3f} {np.std(peak_speeds):>10.3f} "
+      f"{np.min(peak_speeds):>10.3f} {np.max(peak_speeds):>10.3f}")
+print(f"{'Endpoint error (m)':<30} {np.mean(errors):>10.4f} {np.std(errors):>10.4f} "
+      f"{np.min(errors):>10.4f} {np.max(errors):>10.4f}")
+print(f"{'Path length (m)':<30} {np.mean(path_lengths):>10.4f} {np.std(path_lengths):>10.4f} "
+      f"{np.min(path_lengths):>10.4f} {np.max(path_lengths):>10.4f}")
+print(f"{'Target distance (m)':<30} {np.mean(target_dists):>10.4f} {np.std(target_dists):>10.4f} "
+      f"{np.min(target_dists):>10.4f} {np.max(target_dists):>10.4f}")
 print("=" * 80)
 
 
@@ -391,8 +390,8 @@ fig3.suptitle('Figure 3: Trial Analysis — Error Trends & Normalized Velocity P
 ax3[0, 0].scatter(trial_nums, errors, c='steelblue', alpha=0.7, s=30)
 z = np.polyfit(trial_nums, errors, 1)
 p = np.poly1d(z)
-ax3[0, 0].plot(trial_nums, p(trial_nums), 'r--', label=f'slope={z[0]:.4f} cm/trial')
-ax3[0, 0].set_xlabel('Trial number'); ax3[0, 0].set_ylabel('Endpoint error (cm)')
+ax3[0, 0].plot(trial_nums, p(trial_nums), 'r--', label=f'slope={z[0]:.5f} m/trial')
+ax3[0, 0].set_xlabel('Trial number'); ax3[0, 0].set_ylabel('Endpoint error (m)')
 ax3[0, 0].set_title('Error vs Trial Order (learning/fatigue?)')
 ax3[0, 0].legend(fontsize=8); ax3[0, 0].grid(True, alpha=0.3)
 
@@ -402,13 +401,13 @@ z2 = np.polyfit(peak_speeds, errors, 1)
 p2 = np.poly1d(z2)
 xs = np.linspace(min(peak_speeds), max(peak_speeds), 50)
 ax3[0, 1].plot(xs, p2(xs), 'r--', label=f'slope={z2[0]:.4f}')
-ax3[0, 1].set_xlabel('Peak speed (cm/s)'); ax3[0, 1].set_ylabel('Endpoint error (cm)')
+ax3[0, 1].set_xlabel('Peak speed (m/s)'); ax3[0, 1].set_ylabel('Endpoint error (m)')
 ax3[0, 1].set_title("Error vs Speed (Fitts' law?)")
 ax3[0, 1].legend(fontsize=8); ax3[0, 1].grid(True, alpha=0.3)
 
 # [1,0] Error vs duration
 ax3[1, 0].scatter(durations, errors, c='green', alpha=0.7, s=30)
-ax3[1, 0].set_xlabel('Movement duration (ms)'); ax3[1, 0].set_ylabel('Endpoint error (cm)')
+ax3[1, 0].set_xlabel('Movement duration (ms)'); ax3[1, 0].set_ylabel('Endpoint error (m)')
 ax3[1, 0].set_title('Error vs Duration'); ax3[1, 0].grid(True, alpha=0.3)
 
 # [1,1] Duration vs trial number
@@ -445,7 +444,7 @@ for TNum in trial_range:
     ax3[3, 0].plot(t_interp, speed_interp / mean_speed, alpha=0.4)
     ax3[3, 1].plot(t_interp, speed_interp / td if td > 0 else speed_interp, alpha=0.4)
 
-ax3[2, 0].set_ylabel('Speed (cm/s)'); ax3[2, 0].set_title('(a) Raw speed vs norm. time')
+ax3[2, 0].set_ylabel('Speed (m/s)'); ax3[2, 0].set_title('(a) Raw speed vs norm. time')
 ax3[2, 1].set_ylabel('Speed / Peak speed'); ax3[2, 1].set_title('(b) Speed / peak speed — shape (RECOMMENDED)')
 ax3[3, 0].set_ylabel('Speed / Mean speed'); ax3[3, 0].set_title('(c) Speed / mean speed — relative modulation')
 ax3[3, 0].set_xlabel('Normalized time (0–1)')
@@ -548,7 +547,7 @@ for idx, TNum in enumerate(trial_range):
     ax_traj.plot(TrajData[TNum]['Sen2X'], TrajData[TNum]['Sen2Y'], color=c, alpha=0.5)
 ax_traj.plot(targetx, targety, 'kx', markersize=8)
 ax_traj.set_title('Trajectories by cluster')
-ax_traj.set_xlabel('X (cm)'); ax_traj.set_ylabel('Y (cm)')
+ax_traj.set_xlabel('X (m)'); ax_traj.set_ylabel('Y (m)')
 ax_traj.axis('equal'); ax_traj.grid(True, alpha=0.3)
 
 # [1, 1] Peak speed by cluster
@@ -563,7 +562,7 @@ ax_spd = fig5.add_subplot(gs[1, 1])
 bp1 = ax_spd.boxplot(cluster_speeds, labels=cluster_names, patch_artist=True)
 for patch, color in zip(bp1['boxes'], colors):
     patch.set_facecolor(color); patch.set_alpha(0.5)
-ax_spd.set_ylabel('Peak speed (cm/s)'); ax_spd.set_title('Peak speed by cluster')
+ax_spd.set_ylabel('Peak speed (m/s)'); ax_spd.set_title('Peak speed by cluster')
 ax_spd.grid(True, alpha=0.3)
 
 # [1, 2] Target distance by cluster
@@ -571,7 +570,7 @@ ax_dst = fig5.add_subplot(gs[1, 2])
 bp2 = ax_dst.boxplot(cluster_dists, labels=cluster_names, patch_artist=True)
 for patch, color in zip(bp2['boxes'], colors):
     patch.set_facecolor(color); patch.set_alpha(0.5)
-ax_dst.set_ylabel('Target distance (cm)'); ax_dst.set_title('Target distance by cluster')
+ax_dst.set_ylabel('Target distance (m)'); ax_dst.set_title('Target distance by cluster')
 ax_dst.grid(True, alpha=0.3)
 
 # [2, 0:1] Shoulder torque dominance stacked bar
@@ -646,8 +645,8 @@ for ci in range(n_clusters):
     print(f"\n{cluster_names[ci]} ({len(members)} trials): {members}")
     speeds = [trial_stats[t]['peak_speed'] for t in members]
     dists = [trial_stats[t]['target_dist'] for t in members]
-    print(f"  Peak speed: {np.mean(speeds):.1f} ± {np.std(speeds):.1f} cm/s")
-    print(f"  Target dist: {np.mean(dists):.1f} ± {np.std(dists):.1f} cm")
+    print(f"  Peak speed: {np.mean(speeds):.3f} ± {np.std(speeds):.3f} m/s")
+    print(f"  Target dist: {np.mean(dists):.4f} ± {np.std(dists):.4f} m")
 print("=" * 65)
 
 
