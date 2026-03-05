@@ -402,7 +402,7 @@ p2 = np.poly1d(z2)
 xs = np.linspace(min(peak_speeds), max(peak_speeds), 50)
 ax3[0, 1].plot(xs, p2(xs), 'r--', label=f'slope={z2[0]:.4f}')
 ax3[0, 1].set_xlabel('Peak speed (m/s)'); ax3[0, 1].set_ylabel('Endpoint error (m)')
-ax3[0, 1].set_title("Error vs Speed (Fitts' law?)")
+ax3[0, 1].set_title("Error vs Speed")
 ax3[0, 1].legend(fontsize=8); ax3[0, 1].grid(True, alpha=0.3)
 
 # [1,0] Error vs duration
@@ -445,7 +445,7 @@ for TNum in trial_range:
     ax3[3, 1].plot(t_interp, speed_interp / td if td > 0 else speed_interp, alpha=0.4)
 
 ax3[2, 0].set_ylabel('Speed (m/s)'); ax3[2, 0].set_title('(a) Raw speed vs norm. time')
-ax3[2, 1].set_ylabel('Speed / Peak speed'); ax3[2, 1].set_title('(b) Speed / peak speed — shape (RECOMMENDED)')
+ax3[2, 1].set_ylabel('Speed / Peak speed'); ax3[2, 1].set_title('(b) Speed / peak speed — shape')
 ax3[3, 0].set_ylabel('Speed / Mean speed'); ax3[3, 0].set_title('(c) Speed / mean speed — relative modulation')
 ax3[3, 0].set_xlabel('Normalized time (0–1)')
 ax3[3, 1].set_ylabel('Speed / Target dist (1/s)'); ax3[3, 1].set_title('(d) Speed / target distance')
